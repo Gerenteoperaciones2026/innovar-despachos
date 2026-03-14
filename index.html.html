@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Innovar — Sistema de Despachos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --navy: #0B1F3A;
+    --navy2: #122848;
+    --accent: #E8A020;
+    --accent2: #F5C55A;
+    --teal: #1A8A6E;
+    --teal-light: #E0F5EF;
+    --red: #C0392B;
+    --red-light: #FDECEA;
+    --blue-light: #E8F2FB;
+    --blue-mid: #2A6FAE;
+    --gray0: #F7F8FA;
+    --gray1: #ECEEF2;
+    --gray2: #D4D8E0;
+    --gray3: #9AA0AC;
+    --gray4: #5A6070;
+    --text: #1A1E28;
+    --white: #FFFFFF;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 2px 12px rgba(11,31,58,0.10);
+    --shadow-lg: 0 8px 32px rgba(11,31,58,0.14);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray0);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 220px;
+    background: var(--navy);
+    display: flex; flex-direction: column;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-logo .brand {
+    font-size: 20px; font-weight: 600; color: var(--white);
+    letter-spacing: -0.3px;
+  }
+  .sidebar-logo .sub {
+    font-size: 11px; color: var(--accent); font-weight: 500;
+    text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px;
+  }
+  .nav-section { padding: 20px 12px 8px; }
+  .nav-label {
+    font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.3);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    padding: 0 12px; margin-bottom: 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 8px;
+    cursor: pointer; color: rgba(255,255,255,0.65);
+    font-size: 14px; font-weight: 400;
+    transition: all .15s; margin-bottom: 2px;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.07); color: var(--white); }
+  .nav-item.active { background: rgba(232,160,32,0.15); color: var(--accent); font-weight: 500; }
+  .nav-item .ico { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-bottom {
+    margin-top: auto; padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    font-size: 12px; color: rgba(255,255,255,0.3);
+  }
+
+  /* MAIN */
+  .main { margin-left: 220px; min-height: 100vh; }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--white); border-bottom: 1px solid var(--gray1);
+    padding: 0 32px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 1px 4px rgba(11,31,58,0.06);
+  }
+  .topbar-title { font-size: 17px; font-weight: 600; color: var(--navy); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-date { font-size: 12px; color: var(--gray3); font-family: 'DM Mono', monospace; }
+  .badge-count {
+    background: var(--accent); color: var(--navy);
+    font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px;
+  }
+
+  /* CONTENT */
+  .content { padding: 28px 32px; }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* METRICS */
+  .metrics-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 14px; margin-bottom: 24px;
+  }
+  .metric-card {
+    background: var(--white); border-radius: var(--radius-lg);
+    padding: 18px 20px; border: 1px solid var(--gray1);
+    box-shadow: var(--shadow);
+  }
+  .metric-card .lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--gray3); margin-bottom: 6px; }
+  .metric-card .val { font-size: 28px; font-weight: 600; color: var(--navy); line-height: 1; }
+  .metric-card .sub { font-size: 12px; color: var(--gray3); margin-top: 4px; }
+  .metric-card.accent .val { color: var(--accent); }
+  .metric-card.teal .val { color: var(--teal); }
+  .metric-card.red .val { color: var(--red); }
+
+  /* FORM CARD */
+  .form-card {
+    background: var(--white); border-radius: var(--radius-lg);
+    border: 1px solid var(--gray1); box-shadow: var(--shadow);
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .form-card-header {
+    padding: 16px 24px; background: var(--navy);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .form-card-header .icon { font-size: 18px; }
+  .form-card-header .ttl { font-size: 14px; font-weight: 600; color: var(--white); }
+  .form-card-header .desc { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+  .form-card-body { padding: 24px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .form-grid.four { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .full { grid-column: 1 / -1; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .8px; color: var(--gray4);
+  }
+  .field label .req { color: var(--accent); margin-left: 2px; }
+  .field input, .field select, .field textarea {
+    padding: 10px 13px;
+    border: 1.5px solid var(--gray2);
+    border-radius: var(--radius);
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--text); background: var(--white);
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--blue-mid);
+    box-shadow: 0 0 0 3px rgba(42,111,174,0.12);
+  }
+  .field textarea { resize: vertical; min-height: 72px; }
+  .field input.error, .field select.error { border-color: var(--red); }
+
+  /* Horario checks */
+  .horario-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .check-pill {
+    display: flex; align-items: center; gap: 7px;
+    padding: 8px 14px; border-radius: 20px;
+    border: 1.5px solid var(--gray2); cursor: pointer;
+    font-size: 13px; color: var(--gray4);
+    transition: all .15s; user-select: none;
+    background: var(--white);
+  }
+  .check-pill input { display: none; }
+  .check-pill.checked { border-color: var(--teal); background: var(--teal-light); color: var(--teal); font-weight: 500; }
+  .check-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray2); transition: background .15s; }
+  .check-pill.checked .dot { background: var(--teal); }
+
+  /* BUTTONS */
+  .btn-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+  .btn {
+    padding: 10px 22px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    border: 1.5px solid var(--gray2); background: var(--white);
+    color: var(--gray4); transition: all .15s; font-family: 'DM Sans', sans-serif;
+  }
+  .btn:hover { background: var(--gray1); border-color: var(--gray3); color: var(--text); }
+  .btn.primary {
+    background: var(--navy); border-color: var(--navy); color: var(--white);
+  }
+  .btn.primary:hover { background: var(--navy2); }
+  .btn.accent {
+    background: var(--accent); border-color: var(--accent); color: var(--navy);
+  }
+  .btn.accent:hover { background: var(--accent2); }
+  .btn.sm { padding: 6px 14px; font-size: 12px; }
+  .btn.danger { color: var(--red); border-color: var(--red-light); }
+  .btn.danger:hover { background: var(--red-light); }
+
+  /* ALERT */
+  .alert {
+    padding: 12px 16px; border-radius: var(--radius);
+    font-size: 13px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .alert.success { background: var(--teal-light); color: var(--teal); border: 1px solid #9FD6C6; }
+  .alert.error { background: var(--red-light); color: var(--red); border: 1px solid #F0AAAA; }
+  .alert-icon { font-size: 16px; }
+
+  /* TABLE CARD */
+  .table-card {
+    background: var(--white); border-radius: var(--radius-lg);
+    border: 1px solid var(--gray1); box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .table-toolbar {
+    padding: 16px 20px; border-bottom: 1px solid var(--gray1);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .search-input {
+    padding: 8px 13px; border: 1.5px solid var(--gray2);
+    border-radius: var(--radius); font-size: 13px;
+    font-family: 'DM Sans', sans-serif; outline: none;
+    transition: border-color .15s; width: 220px;
+  }
+  .search-input:focus { border-color: var(--blue-mid); }
+  .filter-select {
+    padding: 8px 13px; border: 1.5px solid var(--gray2);
+    border-radius: var(--radius); font-size: 13px;
+    font-family: 'DM Sans', sans-serif; outline: none;
+    background: var(--white); cursor: pointer;
+  }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--navy); }
+  th {
+    padding: 11px 14px; text-align: left;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: rgba(255,255,255,0.6); white-space: nowrap;
+  }
+  td {
+    padding: 11px 14px; border-bottom: 1px solid var(--gray1);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #F9FAFB; }
+  .td-main { font-weight: 600; color: var(--navy); font-size: 13px; }
+  .td-sub { font-size: 11px; color: var(--gray3); margin-top: 2px; }
+
+  /* BADGES */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+  .badge.pendiente { background: #FEF3CD; color: #7A5200; }
+  .badge.pendiente::before { background: #E8A020; }
+  .badge.en-ruta { background: var(--blue-light); color: #1A4D80; }
+  .badge.en-ruta::before { background: var(--blue-mid); }
+  .badge.entregado { background: var(--teal-light); color: #0A5C3E; }
+  .badge.entregado::before { background: var(--teal); }
+  .badge.devuelto { background: var(--red-light); color: var(--red); }
+  .badge.devuelto::before { background: var(--red); }
+
+  /* RUTAS */
+  .ruta-fecha {
+    background: var(--white); border-radius: var(--radius-lg);
+    border: 1px solid var(--gray1); box-shadow: var(--shadow);
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .ruta-fecha-header {
+    padding: 16px 24px; background: var(--navy2);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .ruta-fecha-header .fecha-lbl { font-size: 15px; font-weight: 600; color: var(--white); }
+  .ruta-fecha-header .stats { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+  .veh-block { border-bottom: 1px solid var(--gray1); }
+  .veh-block:last-child { border-bottom: none; }
+  .veh-header {
+    padding: 12px 24px; background: var(--gray0);
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--gray1);
+  }
+  .veh-tag {
+    background: var(--navy); color: var(--accent);
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .veh-info { font-size: 12px; color: var(--gray3); }
+  .parada {
+    padding: 14px 24px 14px 20px;
+    display: flex; gap: 14px; align-items: flex-start;
+    border-bottom: 1px solid var(--gray1);
+  }
+  .parada:last-child { border-bottom: none; }
+  .parada-num {
+    min-width: 26px; height: 26px; border-radius: 50%;
+    background: var(--navy); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace;
+    margin-top: 2px;
+  }
+  .parada-body { flex: 1; }
+  .parada-cliente { font-weight: 600; font-size: 14px; color: var(--navy); }
+  .parada-dir { font-size: 12px; color: var(--gray3); margin-top: 2px; }
+  .parada-meta {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px;
+  }
+  .meta-chip {
+    font-size: 11px; color: var(--gray4);
+    background: var(--gray0); border: 1px solid var(--gray1);
+    padding: 2px 8px; border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+  }
+  .parada-obs { font-size: 12px; color: var(--blue-mid); margin-top: 5px; font-style: italic; }
+
+  /* EMPTY */
+  .empty {
+    text-align: center; padding: 48px 24px;
+    color: var(--gray3); font-size: 14px;
+  }
+  .empty .ico { font-size: 40px; margin-bottom: 10px; opacity: .5; }
+
+  /* STATUS STRIP */
+  .status-strip {
+    background: var(--navy); color: rgba(255,255,255,0.5);
+    font-size: 11px; padding: 6px 24px;
+    display: flex; gap: 20px; font-family: 'DM Mono', monospace;
+  }
+  .status-strip span { color: var(--accent); }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .section.active { animation: fadeIn .2s ease; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .sidebar { width: 60px; }
+    .sidebar-logo .brand, .sidebar-logo .sub, .nav-label, .nav-item span { display: none; }
+    .nav-item { justify-content: center; }
+    .main { margin-left: 60px; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid.four { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .content { padding: 16px; }
+    .form-grid, .form-grid.three, .form-grid.four { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">INNOVAR</div>
+    <div class="sub">Despachos</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Principal</div>
+    <button class="nav-item active" onclick="showSection('registro')">
+      <span class="ico">📦</span><span>Nuevo pedido</span>
+    </button>
+    <button class="nav-item" onclick="showSection('pedidos')">
+      <span class="ico">📋</span><span>Pedidos</span>
+    </button>
+    <button class="nav-item" onclick="showSection('rutas')">
+      <span class="ico">🗺️</span><span>Rutas del día</span>
+    </button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Exportar</div>
+    <button class="nav-item" onclick="exportarExcel()">
+      <span class="ico">📊</span><span>Descargar Excel</span>
+    </button>
+  </div>
+  <div class="sidebar-bottom">
+    v1.0 · Innovar
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Registrar nuevo pedido</div>
+    <div class="topbar-right">
+      <div class="topbar-date" id="fecha-display"></div>
+      <div class="badge-count" id="total-badge">0 pedidos</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- SECCIÓN REGISTRO -->
+    <div class="section active" id="sec-registro">
+      <div id="form-alert"></div>
+
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="icon">👤</div>
+          <div>
+            <div class="ttl">Información del cliente y destino</div>
+            <div class="desc">Datos para la entrega a domicilio</div>
+          </div>
+        </div>
+        <div class="form-card-body">
+          <div class="form-grid">
+            <div class="field full">
+              <label>Nombre del cliente <span class="req">*</span></label>
+              <input type="text" id="f-cliente" placeholder="Razón social o nombre completo">
+            </div>
+            <div class="field full">
+              <label>Dirección de entrega <span class="req">*</span></label>
+              <input type="text" id="f-direccion" placeholder="Calle / Carrera, número, piso / apto">
+            </div>
+            <div class="field">
+              <label>Barrio <span class="req">*</span></label>
+              <input type="text" id="f-barrio" placeholder="Barrio">
+            </div>
+            <div class="field">
+              <label>Ciudad / Municipio <span class="req">*</span></label>
+              <select id="f-ciudad">
+                <option value="">— Seleccionar —</option>
+                <optgroup label="Bogotá D.C.">
+                  <option value="Bogotá D.C.">Bogotá D.C.</option>
+                </optgroup>
+                <optgroup label="Municipios de Cundinamarca">
+                  <option>Agua de Dios</option>
+                  <option>Albán</option>
+                  <option>Anapoima</option>
+                  <option>Anolaima</option>
+                  <option>Apulo</option>
+                  <option>Arbeláez</option>
+                  <option>Beltrán</option>
+                  <option>Bituima</option>
+                  <option>Bojacá</option>
+                  <option>Cabrera</option>
+                  <option>Cachipay</option>
+                  <option>Cajicá</option>
+                  <option>Caparrapí</option>
+                  <option>Cáqueza</option>
+                  <option>Carmen de Carupa</option>
+                  <option>Chaguaní</option>
+                  <option>Chía</option>
+                  <option>Chipaque</option>
+                  <option>Choachí</option>
+                  <option>Chocontá</option>
+                  <option>Cogua</option>
+                  <option>Cota</option>
+                  <option>Cucunubá</option>
+                  <option>El Colegio</option>
+                  <option>El Peñón</option>
+                  <option>El Rosal</option>
+                  <option>Facatativá</option>
+                  <option>Fomeque</option>
+                  <option>Fosca</option>
+                  <option>Funza</option>
+                  <option>Fúquene</option>
+                  <option>Fusagasugá</option>
+                  <option>Gachalá</option>
+                  <option>Gachancipá</option>
+                  <option>Gachetá</option>
+                  <option>Gama</option>
+                  <option>Girardot</option>
+                  <option>Granada</option>
+                  <option>Guachetá</option>
+                  <option>Guaduas</option>
+                  <option>Guasca</option>
+                  <option>Guataquí</option>
+                  <option>Guatavita</option>
+                  <option>Guayabal de Síquima</option>
+                  <option>Guayabetal</option>
+                  <option>Gutiérrez</option>
+                  <option>Jerusalén</option>
+                  <option>Junín</option>
+                  <option>La Calera</option>
+                  <option>La Mesa</option>
+                  <option>La Palma</option>
+                  <option>La Peña</option>
+                  <option>La Vega</option>
+                  <option>Lenguazaque</option>
+                  <option>Macheta</option>
+                  <option>Madrid</option>
+                  <option>Manta</option>
+                  <option>Medina</option>
+                  <option>Mosquera</option>
+                  <option>Nariño</option>
+                  <option>Nemocón</option>
+                  <option>Nilo</option>
+                  <option>Nimaima</option>
+                  <option>Nocaima</option>
+                  <option>Pacho</option>
+                  <option>Paime</option>
+                  <option>Pandi</option>
+                  <option>Paratebueno</option>
+                  <option>Pasca</option>
+                  <option>Puerto Salgar</option>
+                  <option>Pulí</option>
+                  <option>Quebradanegra</option>
+                  <option>Quetame</option>
+                  <option>Quipile</option>
+                  <option>Ricaurte</option>
+                  <option>San Antonio del Tequendama</option>
+                  <option>San Bernardo</option>
+                  <option>San Cayetano</option>
+                  <option>San Francisco</option>
+                  <option>San Juan de Rioseco</option>
+                  <option>Sasaima</option>
+                  <option>Sesquilé</option>
+                  <option>Sibaté</option>
+                  <option>Silvania</option>
+                  <option>Simijaca</option>
+                  <option>Soacha</option>
+                  <option>Sopó</option>
+                  <option>Subachoque</option>
+                  <option>Suesca</option>
+                  <option>Supatá</option>
+                  <option>Susa</option>
+                  <option>Sutatausa</option>
+                  <option>Tabio</option>
+                  <option>Tausa</option>
+                  <option>Tena</option>
+                  <option>Tenjo</option>
+                  <option>Tibacuy</option>
+                  <option>Tibirita</option>
+                  <option>Tocaima</option>
+                  <option>Tocancipá</option>
+                  <option>Topaipí</option>
+                  <option>Ubalá</option>
+                  <option>Ubaque</option>
+                  <option>Ubaté</option>
+                  <option>Une</option>
+                  <option>Uticá</option>
+                  <option>Vergara</option>
+                  <option>Vianí</option>
+                  <option>Villagómez</option>
+                  <option>Villapinzón</option>
+                  <option>Villeta</option>
+                  <option>Viotá</option>
+                  <option>Yacopí</option>
+                  <option>Zipacón</option>
+                  <option>Zipaquirá</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="field">
+              <label>Localidad</label>
+              <select id="f-localidad">
+                <option value="">— Seleccionar —</option>
+                <optgroup label="Bogotá D.C.">
+                  <option>Usaquén</option>
+                  <option>Chapinero</option>
+                  <option>Santa Fe</option>
+                  <option>San Cristóbal</option>
+                  <option>Usme</option>
+                  <option>Tunjuelito</option>
+                  <option>Bosa</option>
+                  <option>Kennedy</option>
+                  <option>Fontibón</option>
+                  <option>Engativá</option>
+                  <option>Suba</option>
+                  <option>Barrios Unidos</option>
+                  <option>Teusaquillo</option>
+                  <option>Los Mártires</option>
+                  <option>Antonio Nariño</option>
+                  <option>Puente Aranda</option>
+                  <option>La Candelaria</option>
+                  <option>Rafael Uribe Uribe</option>
+                  <option>Ciudad Bolívar</option>
+                  <option>Sumapaz</option>
+                </optgroup>
+                <optgroup label="Municipios">
+                  <option>Centro</option>
+                  <option>Norte</option>
+                  <option>Sur</option>
+                  <option>Oriente</option>
+                  <option>Occidente</option>
+                  <option>N/A</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="field">
+              <label>Teléfono de contacto <span class="req">*</span></label>
+              <input type="tel" id="f-telefono" placeholder="300 000 0000">
+            </div>
+            <div class="field">
+              <label>Persona que recibe</label>
+              <input type="text" id="f-contacto" placeholder="Nombre del contacto">
+            </div>
+          </div>
+          <div class="field" style="margin-top:16px">
+            <label>Horario de recibo</label>
+            <div class="horario-row">
+              <label class="check-pill" id="pill-manana" onclick="togglePill(this)">
+                <input type="checkbox" id="h-manana" value="Mañana (7–12)">
+                <span class="dot"></span> Mañana (7–12)
+              </label>
+              <label class="check-pill" id="pill-tarde" onclick="togglePill(this)">
+                <input type="checkbox" id="h-tarde" value="Tarde (12–5)">
+                <span class="dot"></span> Tarde (12–5)
+              </label>
+              <label class="check-pill" id="pill-noche" onclick="togglePill(this)">
+                <input type="checkbox" id="h-noche" value="Noche (5–8)">
+                <span class="dot"></span> Noche (5–8)
+              </label>
+            </div>
+          </div>
+          <div class="field" style="margin-top:16px">
+            <label>Observaciones de entrega</label>
+            <textarea id="f-obs-entrega" placeholder="Portería, vigilancia, instrucciones especiales, si no hay nadie qué hacer..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="icon">🧾</div>
+          <div>
+            <div class="ttl">Información del pedido y factura</div>
+            <div class="desc">Datos del documento y logística</div>
+          </div>
+        </div>
+        <div class="form-card-body">
+          <div class="form-grid four">
+            <div class="field">
+              <label>N° de pedido <span class="req">*</span></label>
+              <input type="text" id="f-pedido" placeholder="PED-001">
+            </div>
+            <div class="field">
+              <label>N° de factura <span class="req">*</span></label>
+              <input type="text" id="f-factura" placeholder="FAC-001">
+            </div>
+            <div class="field">
+              <label>Fecha de factura <span class="req">*</span></label>
+              <input type="date" id="f-fecha-factura">
+            </div>
+            <div class="field">
+              <label>Fecha de embarque <span class="req">*</span></label>
+              <input type="date" id="f-fecha-embarque">
+            </div>
+            <div class="field">
+              <label>Cantidad (unidades)</label>
+              <input type="number" id="f-cantidad" placeholder="0" min="0">
+            </div>
+            <div class="field">
+              <label>Valor factura ($)</label>
+              <input type="number" id="f-valor" placeholder="0" min="0">
+            </div>
+            <div class="field">
+              <label>Tipo de venta <span class="req">*</span></label>
+              <select id="f-tipo-venta">
+                <option value="">— Seleccionar —</option>
+                <option value="Retiro personal">Retiro personal</option>
+                <option value="Mayoreo">Mayoreo</option>
+                <option value="Piso domicilio">Piso domicilio</option>
+                <option value="Digital">Digital</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" onclick="limpiarForm()">Limpiar</button>
+        <button class="btn accent" onclick="guardarPedido()">💾 Guardar pedido</button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN PEDIDOS -->
+    <div class="section" id="sec-pedidos">
+      <div class="metrics-grid" id="metrics-grid"></div>
+      <div class="table-card">
+        <div class="table-toolbar">
+          <input class="search-input" type="text" id="buscar" placeholder="🔍  Buscar cliente, factura, pedido..." oninput="renderTabla()">
+          <select class="filter-select" id="filtro-estado" onchange="renderTabla()">
+            <option value="">Todos los tipos</option>
+            <option>Retiro personal</option>
+            <option>Mayoreo</option>
+            <option>Piso domicilio</option>
+            <option>Digital</option>
+          </select>
+          <select class="filter-select" id="filtro-fecha" onchange="renderTabla()">
+            <option value="">Todas las fechas</option>
+          </select>
+          <button class="btn sm accent" onclick="exportarExcel()" style="margin-left:auto">📊 Exportar Excel</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pedido / Factura</th>
+                <th>Cliente</th>
+                <th>Dirección</th>
+                <th>Localidad</th>
+                <th>Teléfono</th>
+                <th>Embarque</th>
+                <th>Cant.</th>
+                <th>Valor</th>
+                <th>Tipo de venta</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN RUTAS -->
+    <div class="section" id="sec-rutas">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div>
+          <div style="font-size:18px;font-weight:600;color:var(--navy)">Consolidado de rutas</div>
+          <div style="font-size:13px;color:var(--gray3);margin-top:2px">Pedidos agrupados por fecha de embarque y vehículo</div>
+        </div>
+        <select class="filter-select" id="filtro-fecha-ruta" onchange="renderRutas()">
+          <option value="">Todas las fechas</option>
+        </select>
+      </div>
+      <div id="rutas-content"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ---- STATE ----
+let pedidos = JSON.parse(localStorage.getItem('innovar_pedidos_v2') || '[]');
+let editId = null;
+
+// ---- INIT ----
+const hoy = new Date();
+document.getElementById('fecha-display').textContent = hoy.toLocaleDateString('es-CO', {weekday:'short', day:'numeric', month:'short', year:'numeric'});
+document.getElementById('f-fecha-factura').valueAsDate = hoy;
+document.getElementById('f-fecha-embarque').valueAsDate = hoy;
+actualizarBadge();
+
+// ---- NAV ----
+const titles = { registro:'Registrar nuevo pedido', pedidos:'Listado de pedidos', rutas:'Rutas del día' };
+function showSection(s) {
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('sec-'+s).classList.add('active');
+  const navItems = document.querySelectorAll('.nav-item');
+  const idx = ['registro','pedidos','rutas','_','exportar'].indexOf(s);
+  if(idx >= 0 && navItems[idx]) navItems[idx].classList.add('active');
+  document.getElementById('topbar-title').textContent = titles[s] || '';
+  if(s === 'pedidos') { actualizarFiltroPedidos(); renderTabla(); renderMetrics(); }
+  if(s === 'rutas') { actualizarFiltroRutas(); renderRutas(); }
+}
+
+// ---- PILLS ----
+function togglePill(el) {
+  const cb = el.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  el.classList.toggle('checked', cb.checked);
+}
+
+// ---- GUARDAR ----
+function guardarPedido() {
+  const required = [
+    ['f-cliente','Nombre del cliente'],
+    ['f-direccion','Dirección'],
+    ['f-barrio','Barrio'],
+    ['f-telefono','Teléfono'],
+    ['f-pedido','N° de pedido'],
+    ['f-factura','N° de factura'],
+    ['f-fecha-factura','Fecha de factura'],
+    ['f-fecha-embarque','Fecha de embarque'],
+  ];
+  let errors = [];
+  required.forEach(([id, name]) => {
+    const el = document.getElementById(id);
+    if(!el.value.trim()) { errors.push(name); el.classList.add('error'); }
+    else el.classList.remove('error');
+  });
+  if(errors.length) {
+    showAlert('Campos requeridos: ' + errors.join(', '), 'error');
+    return;
+  }
+  const horarios = ['h-manana','h-tarde','h-noche']
+    .filter(id => document.getElementById(id).checked)
+    .map(id => document.getElementById(id).value);
+
+  const p = {
+    id: editId || Date.now(),
+    registradoEn: editId ? (pedidos.find(x=>x.id===editId)||{}).registradoEn : new Date().toISOString(),
+    cliente:       document.getElementById('f-cliente').value.trim(),
+    direccion:     document.getElementById('f-direccion').value.trim(),
+    barrio:        document.getElementById('f-barrio').value.trim(),
+    ciudad:        document.getElementById('f-ciudad').value.trim(),
+    localidad:     document.getElementById('f-localidad').value.trim(),
+    telefono:      document.getElementById('f-telefono').value.trim(),
+    contacto:      document.getElementById('f-contacto').value.trim(),
+    horario:       horarios.join(' / ') || 'Flexible',
+    obsEntrega:    document.getElementById('f-obs-entrega').value.trim(),
+    pedido:        document.getElementById('f-pedido').value.trim(),
+    factura:       document.getElementById('f-factura').value.trim(),
+    fechaFactura:  document.getElementById('f-fecha-factura').value,
+    fechaEmbarque: document.getElementById('f-fecha-embarque').value,
+    cantidad:      document.getElementById('f-cantidad').value || '0',
+    valor:         document.getElementById('f-valor').value || '0',
+    tipoVenta:     document.getElementById('f-tipo-venta').value,
+  };
+
+  if(editId) {
+    const i = pedidos.findIndex(x => x.id === editId);
+    if(i > -1) pedidos[i] = p;
+    editId = null;
+    showAlert('✅ Pedido actualizado correctamente.', 'success');
+  } else {
+    pedidos.unshift(p);
+    showAlert('✅ Pedido registrado correctamente.', 'success');
+  }
+  guardarLocal();
+  limpiarForm();
+}
+
+function guardarLocal() {
+  localStorage.setItem('innovar_pedidos_v2', JSON.stringify(pedidos));
+  actualizarBadge();
+}
+
+function actualizarBadge() {
+  document.getElementById('total-badge').textContent = pedidos.length + ' pedido' + (pedidos.length !== 1 ? 's' : '');
+}
+
+function limpiarForm() {
+  ['f-cliente','f-direccion','f-barrio','f-telefono','f-pedido','f-factura','f-contacto','f-obs-entrega']
+    .forEach(id => { document.getElementById(id).value = ''; document.getElementById(id).classList.remove('error'); });
+  document.getElementById('f-ciudad').value = '';
+  document.getElementById('f-localidad').value = '';
+  document.getElementById('f-cantidad').value = '';
+  document.getElementById('f-valor').value = '';
+  document.getElementById('f-tipo-venta').value = '';
+  document.getElementById('f-fecha-factura').valueAsDate = new Date();
+  document.getElementById('f-fecha-embarque').valueAsDate = new Date();
+  ['pill-manana','pill-tarde','pill-noche'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('checked');
+    el.querySelector('input').checked = false;
+  });
+  editId = null;
+}
+
+function showAlert(msg, type) {
+  const el = document.getElementById('form-alert');
+  el.innerHTML = `<div class="alert ${type}"><span class="alert-icon">${type==='success'?'✅':'⚠️'}</span>${msg}</div>`;
+  setTimeout(() => el.innerHTML = '', 4000);
+}
+
+// ---- TABLA ----
+function renderTabla() {
+  const buscar = (document.getElementById('buscar').value || '').toLowerCase();
+  const fEst = document.getElementById('filtro-estado').value;
+  const fFecha = document.getElementById('filtro-fecha').value;
+  let lista = pedidos.filter(p => {
+    const txt = (p.cliente+p.factura+p.pedido+p.barrio+(p.tipoVenta||'')).toLowerCase();
+    return (!buscar || txt.includes(buscar))
+        && (!fEst   || p.tipoVenta === fEst)
+        && (!fFecha || p.fechaEmbarque === fFecha);
+  });
+  const tb = document.getElementById('tbody');
+  if(!lista.length) {
+    tb.innerHTML = `<tr><td colspan="10"><div class="empty"><div class="ico">📭</div>No hay pedidos con estos filtros.</div></td></tr>`;
+    return;
+  }
+  const bmap = {Pendiente:'pendiente','En ruta':'en-ruta',Entregado:'entregado',Devuelto:'devuelto'};
+  tb.innerHTML = lista.map(p => `
+    <tr>
+      <td>
+        <div class="td-main">${p.pedido}</div>
+        <div class="td-sub">${p.factura}</div>
+      </td>
+      <td>
+        <div class="td-main">${p.cliente}</div>
+        <div class="td-sub">${p.ciudad}</div>
+      </td>
+      <td>
+        <div>${p.direccion}</div>
+        <div class="td-sub">${p.barrio}</div>
+      </td>
+      <td style="font-size:12px">${p.localidad||'—'}</td>
+      <td>${p.telefono}${p.contacto?'<div class="td-sub">'+p.contacto+'</div>':''}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px">${p.fechaEmbarque}</td>
+      <td style="text-align:center">${p.cantidad}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px">${p.valor&&p.valor!='0'?'$'+Number(p.valor).toLocaleString('es-CO'):'—'}</td>
+      <td style="font-size:12px">${p.tipoVenta||'—'}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn sm" onclick="editarPedido(${p.id})">Editar</button>
+          <button class="btn sm danger" onclick="eliminar(${p.id})">✕</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function renderMetrics() {
+  const tot = pedidos.length;
+  const pend = pedidos.filter(p => p.estado === 'Pendiente').length;
+  const enRuta = pedidos.filter(p => p.estado === 'En ruta').length;
+  const dev = pedidos.filter(p => p.estado === 'Devuelto').length;
+  const totalVal = pedidos.reduce((s, p) => s + Number(p.valor||0), 0);
+  document.getElementById('metrics-grid').innerHTML = `
+    <div class="metric-card">
+      <div class="lbl">Total pedidos</div>
+      <div class="val">${tot}</div>
+      <div class="sub">Registrados</div>
+    </div>
+    <div class="metric-card accent">
+      <div class="lbl">Pendientes</div>
+      <div class="val">${pend}</div>
+      <div class="sub">Por despachar</div>
+    </div>
+    <div class="metric-card teal">
+      <div class="lbl">En ruta</div>
+      <div class="val">${enRuta}</div>
+      <div class="sub">En camino</div>
+    </div>
+    <div class="metric-card red">
+      <div class="lbl">Devoluciones</div>
+      <div class="val">${dev}</div>
+      <div class="sub">Requieren gestión</div>
+    </div>`;
+}
+
+function actualizarFiltroPedidos() {
+  const fechas = [...new Set(pedidos.map(p => p.fechaEmbarque))].sort();
+  const sel = document.getElementById('filtro-fecha');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todas las fechas</option>' +
+    fechas.map(f => `<option value="${f}"${f===cur?' selected':''}>${f}</option>`).join('');
+}
+
+// ---- EDITAR / ELIMINAR ----
+function editarPedido(id) {
+  const p = pedidos.find(x => x.id === id);
+  if(!p) return;
+  editId = id;
+  document.getElementById('f-cliente').value    = p.cliente || '';
+  document.getElementById('f-direccion').value  = p.direccion || '';
+  document.getElementById('f-barrio').value     = p.barrio || '';
+  document.getElementById('f-ciudad').value     = p.ciudad || '';
+  document.getElementById('f-localidad').value  = p.localidad || '';
+  document.getElementById('f-telefono').value   = p.telefono || '';
+  document.getElementById('f-contacto').value   = p.contacto || '';
+  document.getElementById('f-obs-entrega').value= p.obsEntrega || '';
+  document.getElementById('f-pedido').value     = p.pedido || '';
+  document.getElementById('f-factura').value    = p.factura || '';
+  document.getElementById('f-fecha-factura').value  = p.fechaFactura || '';
+  document.getElementById('f-fecha-embarque').value = p.fechaEmbarque || '';
+  document.getElementById('f-cantidad').value   = p.cantidad || '';
+  document.getElementById('f-valor').value      = p.valor || '';
+  document.getElementById('f-tipo-venta').value = p.tipoVenta || '';
+  const horarios = p.horario ? p.horario.split(' / ') : [];
+  const map = {'Mañana (7–12)':'pill-manana','Tarde (12–5)':'pill-tarde','Noche (5–8)':'pill-noche'};
+  ['pill-manana','pill-tarde','pill-noche'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('checked');
+    el.querySelector('input').checked = false;
+  });
+  horarios.forEach(h => {
+    const pid = map[h];
+    if(pid) {
+      const el = document.getElementById(pid);
+      el.classList.add('checked');
+      el.querySelector('input').checked = true;
+    }
+  });
+  showSection('registro');
+  showAlert('✏️ Editando pedido: ' + p.pedido, 'success');
+}
+
+function eliminar(id) {
+  if(!confirm('¿Eliminar este pedido? Esta acción no se puede deshacer.')) return;
+  pedidos = pedidos.filter(p => p.id !== id);
+  guardarLocal();
+  renderTabla();
+  renderMetrics();
+}
+
+// ---- RUTAS ----
+function actualizarFiltroRutas() {
+  const fechas = [...new Set(pedidos.map(p => p.fechaEmbarque))].sort();
+  const sel = document.getElementById('filtro-fecha-ruta');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todas las fechas</option>' +
+    fechas.map(f => `<option value="${f}"${f===cur?' selected':''}>${f}</option>`).join('');
+}
+
+function renderRutas() {
+  const filtroFecha = document.getElementById('filtro-fecha-ruta').value;
+  let lista = filtroFecha ? pedidos.filter(p => p.fechaEmbarque === filtroFecha) : pedidos;
+  const cont = document.getElementById('rutas-content');
+  if(!lista.length) {
+    cont.innerHTML = `<div class="empty"><div class="ico">🗺️</div>No hay pedidos para mostrar.</div>`;
+    return;
+  }
+  const porFecha = {};
+  lista.forEach(p => { if(!porFecha[p.fechaEmbarque]) porFecha[p.fechaEmbarque] = []; porFecha[p.fechaEmbarque].push(p); });
+  const fechas = Object.keys(porFecha).sort();
+  cont.innerHTML = fechas.map(f => {
+    const lst = porFecha[f];
+    const porVeh = {};
+    lst.forEach(p => { const v = p.vehiculo || 'Sin asignar'; if(!porVeh[v]) porVeh[v] = []; porVeh[v].push(p); });
+    const totalVal = lst.reduce((s, p) => s + Number(p.valor||0), 0);
+    const vehs = Object.entries(porVeh).map(([veh, ps]) => `
+      <div class="veh-block">
+        <div class="veh-header">
+          <span class="veh-tag">${veh}</span>
+          <span class="veh-info">${ps.length} parada${ps.length!==1?'s':''}</span>
+        </div>
+        ${ps.map((p, i) => `
+          <div class="parada">
+            <div class="parada-num">${i+1}</div>
+            <div class="parada-body">
+              <div class="parada-cliente">${p.cliente}</div>
+              <div class="parada-dir">📍 ${p.direccion} — ${p.barrio}, ${p.ciudad} · 📞 ${p.telefono}${p.contacto?' ('+p.contacto+')':''}</div>
+              <div class="parada-meta">
+                <span class="meta-chip">PED: ${p.pedido}</span>
+                <span class="meta-chip">FAC: ${p.factura}</span>
+                <span class="meta-chip">Cant: ${p.cantidad}</span>
+                ${p.valor&&p.valor!='0'?'<span class="meta-chip">$'+Number(p.valor).toLocaleString('es-CO')+'</span>':''}
+                ${p.horario&&p.horario!=='Flexible'?'<span class="meta-chip">🕐 '+p.horario+'</span>':''}
+              </div>
+              ${p.obsEntrega?'<div class="parada-obs">ℹ️ '+p.obsEntrega+'</div>':''}
+              ${p.obsPedido?'<div class="parada-obs" style="color:var(--red)">⚠️ '+p.obsPedido+'</div>':''}
+            </div>
+            <span class="meta-chip" style="font-size:11px;margin-top:4px">${p.tipoVenta||'—'}</span>
+          </div>`).join('')}
+      </div>`).join('');
+
+    return `<div class="ruta-fecha">
+      <div class="ruta-fecha-header">
+        <div>
+          <div class="fecha-lbl">📅 Embarque: ${f}</div>
+          <div class="stats">${lst.length} pedidos · ${Object.keys(porVeh).length} vehículo(s) · Total: $${totalVal.toLocaleString('es-CO')}</div>
+        </div>
+      </div>
+      ${vehs}
+    </div>`;
+  }).join('');
+}
+
+// ---- EXPORTAR EXCEL ----
+function exportarExcel() {
+  if(!pedidos.length) { alert('No hay pedidos para exportar.'); return; }
+  const cols = [
+    'Fecha Registro','N° Pedido','N° Factura','Fecha Factura','Fecha Embarque',
+    'Cliente','Dirección','Barrio','Ciudad / Municipio','Localidad','Teléfono','Contacto',
+    'Horario Recibo','Cantidad','Valor Factura','Tipo de Venta','Obs Entrega'
+  ];
+  const rows = pedidos.map(p => [
+    p.registradoEn ? new Date(p.registradoEn).toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'}) : '',
+    p.pedido, p.factura,
+    p.fechaFactura ? p.fechaFactura.split('-').reverse().join('/') : '',
+    p.fechaEmbarque ? p.fechaEmbarque.split('-').reverse().join('/') : '',
+    p.cliente, p.direccion, p.barrio, p.ciudad, p.localidad, p.telefono, p.contacto,
+    p.horario, p.cantidad, p.valor, p.tipoVenta, p.obsEntrega
+  ]);
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([cols, ...rows]);
+
+  // Ancho de columnas
+  ws['!cols'] = [14,12,12,14,14,28,28,16,16,16,16,16,18,10,14,16,28].map(w => ({wch:w}));
+
+  // Estilo encabezado (color navy)
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for(let C = range.s.c; C <= range.e.c; C++) {
+    const cell = ws[XLSX.utils.encode_cell({r:0, c:C})];
+    if(cell) {
+      cell.s = {
+        fill: { fgColor: { rgb: '0B1F3A' } },
+        font: { bold: true, color: { rgb: 'FFFFFF' }, name: 'Calibri', sz: 11 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: { bottom: { style: 'thin', color: { rgb: 'E8A020' } } }
+      };
+    }
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Pedidos');
+
+  // Hoja de resumen
+  const resumen = [
+    ['RESUMEN DE DESPACHOS — INNOVAR'],
+    ['Generado:', new Date().toLocaleString('es-CO')],
+    [''],
+    ['Total pedidos', pedidos.length],
+    ['Retiro personal', pedidos.filter(p=>p.tipoVenta==='Retiro personal').length],
+    ['Mayoreo', pedidos.filter(p=>p.tipoVenta==='Mayoreo').length],
+    ['Piso domicilio', pedidos.filter(p=>p.tipoVenta==='Piso domicilio').length],
+    ['Digital', pedidos.filter(p=>p.tipoVenta==='Digital').length],
+    [''],
+    ['Valor total facturado', pedidos.reduce((s,p)=>s+Number(p.valor||0),0)],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(resumen);
+  ws2['!cols'] = [{wch:30},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+
+  const fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Innovar_Despachos_${fecha}.xlsx`);
+}
+</script>
+</body>
+</html>
