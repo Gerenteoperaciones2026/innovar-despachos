@@ -376,16 +376,9 @@
     <button class="nav-item" onclick="showSection('pedidos')">
       <span class="ico">📋</span><span>Pedidos</span>
     </button>
-    <button class="nav-item" onclick="showSection('rutas')">
-      <span class="ico">🗺️</span><span>Rutas del día</span>
-    </button>
+
   </div>
-  <div class="nav-section">
-    <div class="nav-label">Exportar</div>
-    <button class="nav-item" onclick="exportarExcel()">
-      <span class="ico">📊</span><span>Descargar Excel</span>
-    </button>
-  </div>
+
   <div class="sidebar-bottom">
     v1.0 · tiendainnovar.com
   </div>
@@ -707,7 +700,7 @@
           <select class="filter-select" id="filtro-fecha" onchange="renderTabla()">
             <option value="">Todas las fechas</option>
           </select>
-          <button class="btn sm accent" onclick="exportarExcel()" style="margin-left:auto">📊 Exportar Excel</button>
+
         </div>
         <div class="table-wrap">
           <table>
@@ -723,7 +716,6 @@
                 <th>Valor</th>
                 <th>Tipo de venta</th>
                 <th>Saldo</th>
-                <th>Acciones</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -762,17 +754,16 @@ document.getElementById('f-fecha-embarque').valueAsDate = hoy;
 actualizarBadge();
 
 // ---- NAV ----
-const titles = { registro:'Registrar nuevo pedido', pedidos:'Listado de pedidos', rutas:'Rutas del día' };
+const titles = { registro:'Registrar nuevo pedido', pedidos:'Listado de pedidos' };
 function showSection(s) {
   document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('sec-'+s).classList.add('active');
   const navItems = document.querySelectorAll('.nav-item');
-  const idx = ['registro','pedidos','rutas','_','exportar'].indexOf(s);
+  const idx = ['registro','pedidos'].indexOf(s);
   if(idx >= 0 && navItems[idx]) navItems[idx].classList.add('active');
   document.getElementById('topbar-title').textContent = titles[s] || '';
   if(s === 'pedidos') { actualizarFiltroPedidos(); renderTabla(); renderMetrics(); }
-  if(s === 'rutas') { actualizarFiltroRutas(); renderRutas(); }
 }
 
 // ---- PILLS ----
@@ -988,12 +979,6 @@ function renderTabla() {
       <td style="font-size:12px">${p.tipoVenta||'—'}</td>
       <td>${p.saldo==='Si'?'<span class="badge devuelto" style="background:#FEF3CD;color:#7A5200">Sí — $'+Number(p.saldoValor||0).toLocaleString('es-CO')+'</span>':'<span style="font-size:12px;color:var(--gray3)">No</span>'}</td>
       <td style="font-size:12px">${p.saldo==='Si'?'<span style="color:#A32D2D;font-weight:600">Sí — $'+Number(p.saldoValor||0).toLocaleString('es-CO')+'</span>':'<span style="color:#27500A">No</span>'}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn sm" onclick="editarPedido(${p.id})">Editar</button>
-          <button class="btn sm danger" onclick="eliminar(${p.id})">✕</button>
-        </div>
-      </td>
     </tr>`).join('');
 }
 
