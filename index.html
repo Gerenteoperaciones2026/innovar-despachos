@@ -666,6 +666,17 @@
                 <option value="Digital">Digital</option>
               </select>
             </div>
+            <div class="field">
+              <label>¿Tiene saldo pendiente?</label>
+              <select id="f-saldo-yn" onchange="toggleSaldo(this.value)">
+                <option value="No">No</option>
+                <option value="Si">Sí</option>
+              </select>
+            </div>
+            <div class="field" id="campo-saldo" style="display:none">
+              <label>Valor del saldo ($)</label>
+              <input type="number" id="f-saldo-valor" placeholder="0" min="0">
+            </div>
           </div>
         </div>
       </div>
@@ -707,6 +718,7 @@
                 <th>Cant.</th>
                 <th>Valor</th>
                 <th>Tipo de venta</th>
+                <th>Saldo</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -766,6 +778,57 @@ function togglePill(el) {
   el.classList.toggle('checked', cb.checked);
 }
 
+// ---- POWER AUTOMATE ----
+const POWER_AUTOMATE_URL = 'https://default5a621dddd1d3448ea20b8503e8a56d.36.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a06abc78929d471b83ac6e45a076687c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=wZ9djbR2vQsG7BCJH6vRLr1wfueHoMqwPYWGQSV_Qwk';
+
+async function enviarAPowerAutomate(pedido) {
+  const payload = {
+    registradoEn: new Date(pedido.registradoEn).toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'}),
+    pedido:       pedido.pedido,
+    factura:      pedido.factura,
+    fechaFactura: pedido.fechaFactura ? pedido.fechaFactura.split('-').reverse().join('/') : '',
+    fechaEmbarque:pedido.fechaEmbarque ? pedido.fechaEmbarque.split('-').reverse().join('/') : '',
+    cliente:      pedido.cliente,
+    direccion:    pedido.direccion,
+    barrio:       pedido.barrio,
+    ciudad:       pedido.ciudad,
+    localidad:    pedido.localidad || '',
+    telefono:     pedido.telefono,
+    contacto:     pedido.contacto || '',
+    horario:      pedido.horario || '',
+    cantidad:     pedido.cantidad || '',
+    valor:        pedido.valor || '',
+    tipoVenta:    pedido.tipoVenta || '',
+    saldo:        pedido.saldo || 'No',
+    saldoValor:   pedido.saldoValor || '',
+    obsEntrega:   pedido.obsEntrega || '',
+    saldo:        pedido.saldo || 'No',
+    saldoValor:   pedido.saldoValor || ''
+  };
+  try {
+    const resp = await fetch(POWER_AUTOMATE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return resp.ok || resp.status === 202;
+  } catch(e) {
+    return false;
+  }
+}
+
+// ---- SALDO TOGGLE ----
+function toggleSaldo(val) {
+  document.getElementById('campo-saldo').style.display = val === 'Si' ? '' : 'none';
+  if(val !== 'Si') document.getElementById('f-saldo-valor').value = '';
+}
+
+// ---- SALDO TOGGLE ----
+function toggleSaldo(val) {
+  document.getElementById('campo-saldo').style.display = val === 'Si' ? '' : 'none';
+  if(val !== 'Si') document.getElementById('f-saldo-valor').value = '';
+}
+
 // ---- GUARDAR ----
 function guardarPedido() {
   const required = [
@@ -811,19 +874,31 @@ function guardarPedido() {
     cantidad:      document.getElementById('f-cantidad').value || '0',
     valor:         document.getElementById('f-valor').value || '0',
     tipoVenta:     document.getElementById('f-tipo-venta').value,
+    saldo:         document.getElementById('f-saldo-yn').value,
+    saldoValor:    document.getElementById('f-saldo-yn').value === 'Si' ? (document.getElementById('f-saldo-valor').value || '0') : '',
   };
 
   if(editId) {
     const i = pedidos.findIndex(x => x.id === editId);
     if(i > -1) pedidos[i] = p;
     editId = null;
+    guardarLocal();
+    limpiarForm();
     showAlert('✅ Pedido actualizado correctamente.', 'success');
   } else {
     pedidos.unshift(p);
-    showAlert('✅ Pedido registrado correctamente.', 'success');
+    guardarLocal();
+    limpiarForm();
+    showAlert('⏳ Guardando y enviando a Excel...', 'success');
+    enviarAPowerAutomate(p).then(ok => {
+      showAlert(
+        ok
+          ? '✅ Pedido guardado y registrado en Excel correctamente.'
+          : '✅ Pedido guardado localmente. (Verifica conexión con Excel)',
+        ok ? 'success' : 'error'
+      );
+    });
   }
-  guardarLocal();
-  limpiarForm();
 }
 
 function guardarLocal() {
@@ -843,6 +918,12 @@ function limpiarForm() {
   document.getElementById('f-cantidad').value = '';
   document.getElementById('f-valor').value = '';
   document.getElementById('f-tipo-venta').value = '';
+  document.getElementById('f-saldo-yn').value = 'No';
+  document.getElementById('f-saldo-valor').value = '';
+  document.getElementById('campo-saldo').style.display = 'none';
+  document.getElementById('f-saldo-yn').value = 'No';
+  document.getElementById('f-saldo-valor').value = '';
+  document.getElementById('campo-saldo').style.display = 'none';
   document.getElementById('f-fecha-factura').valueAsDate = new Date();
   document.getElementById('f-fecha-embarque').valueAsDate = new Date();
   ['pill-manana','pill-tarde','pill-noche'].forEach(id => {
@@ -872,7 +953,7 @@ function renderTabla() {
   });
   const tb = document.getElementById('tbody');
   if(!lista.length) {
-    tb.innerHTML = `<tr><td colspan="10"><div class="empty"><div class="ico">📭</div>No hay pedidos con estos filtros.</div></td></tr>`;
+    tb.innerHTML = `<tr><td colspan="11"><div class="empty"><div class="ico">📭</div>No hay pedidos con estos filtros.</div></td></tr>`;
     return;
   }
   const bmap = {Pendiente:'pendiente','En ruta':'en-ruta',Entregado:'entregado',Devuelto:'devuelto'};
@@ -896,6 +977,8 @@ function renderTabla() {
       <td style="text-align:center">${p.cantidad}</td>
       <td style="font-family:'DM Mono',monospace;font-size:12px">${p.valor&&p.valor!='0'?'$'+Number(p.valor).toLocaleString('es-CO'):'—'}</td>
       <td style="font-size:12px">${p.tipoVenta||'—'}</td>
+      <td>${p.saldo==='Si'?'<span class="badge devuelto" style="background:#FEF3CD;color:#7A5200">Sí — $'+Number(p.saldoValor||0).toLocaleString('es-CO')+'</span>':'<span style="font-size:12px;color:var(--gray3)">No</span>'}</td>
+      <td style="font-size:12px">${p.saldo==='Si'?'<span style="color:#A32D2D;font-weight:600">Sí — $'+Number(p.saldoValor||0).toLocaleString('es-CO')+'</span>':'<span style="color:#27500A">No</span>'}</td>
       <td>
         <div style="display:flex;gap:6px">
           <button class="btn sm" onclick="editarPedido(${p.id})">Editar</button>
@@ -962,6 +1045,12 @@ function editarPedido(id) {
   document.getElementById('f-cantidad').value   = p.cantidad || '';
   document.getElementById('f-valor').value      = p.valor || '';
   document.getElementById('f-tipo-venta').value = p.tipoVenta || '';
+  document.getElementById('f-saldo-yn').value = p.saldo || 'No';
+  toggleSaldo(p.saldo || 'No');
+  document.getElementById('f-saldo-valor').value = p.saldoValor || '';
+  document.getElementById('f-saldo-yn').value = p.saldo || 'No';
+  toggleSaldo(p.saldo || 'No');
+  document.getElementById('f-saldo-valor').value = p.saldoValor || '';
   const horarios = p.horario ? p.horario.split(' / ') : [];
   const map = {'Mañana (7–12)':'pill-manana','Tarde (12–5)':'pill-tarde','Noche (5–8)':'pill-noche'};
   ['pill-manana','pill-tarde','pill-noche'].forEach(id => {
@@ -1032,6 +1121,7 @@ function renderRutas() {
                 <span class="meta-chip">Cant: ${p.cantidad}</span>
                 ${p.valor&&p.valor!='0'?'<span class="meta-chip">$'+Number(p.valor).toLocaleString('es-CO')+'</span>':''}
                 ${p.horario&&p.horario!=='Flexible'?'<span class="meta-chip">🕐 '+p.horario+'</span>':''}
+                ${p.saldo==='Si'?'<span class="meta-chip" style="background:#FEF3CD;color:#7A5200;border-color:#FAC775">⚠️ Saldo: $'+Number(p.saldoValor||0).toLocaleString('es-CO')+'</span>':''}
               </div>
               ${p.obsEntrega?'<div class="parada-obs">ℹ️ '+p.obsEntrega+'</div>':''}
               ${p.obsPedido?'<div class="parada-obs" style="color:var(--red)">⚠️ '+p.obsPedido+'</div>':''}
@@ -1058,7 +1148,7 @@ function exportarExcel() {
   const cols = [
     'Fecha Registro','N° Pedido','N° Factura','Fecha Factura','Fecha Embarque',
     'Cliente','Dirección','Barrio','Ciudad / Municipio','Localidad','Teléfono','Contacto',
-    'Horario Recibo','Cantidad','Valor Factura','Tipo de Venta','Obs Entrega'
+    'Horario Recibo','Cantidad','Valor Factura','Tipo de Venta','Obs Entrega','Saldo','Valor Saldo','Saldo','Valor Saldo'
   ];
   const rows = pedidos.map(p => [
     p.registradoEn ? new Date(p.registradoEn).toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'}) : '',
@@ -1066,14 +1156,14 @@ function exportarExcel() {
     p.fechaFactura ? p.fechaFactura.split('-').reverse().join('/') : '',
     p.fechaEmbarque ? p.fechaEmbarque.split('-').reverse().join('/') : '',
     p.cliente, p.direccion, p.barrio, p.ciudad, p.localidad, p.telefono, p.contacto,
-    p.horario, p.cantidad, p.valor, p.tipoVenta, p.obsEntrega
+    p.horario, p.cantidad, p.valor, p.tipoVenta, p.obsEntrega, p.saldo||'No', p.saldoValor||''
   ]);
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet([cols, ...rows]);
 
   // Ancho de columnas
-  ws['!cols'] = [14,12,12,14,14,28,28,16,16,16,16,16,18,10,14,16,28].map(w => ({wch:w}));
+  ws['!cols'] = [14,12,12,14,14,28,28,16,16,16,16,16,18,10,14,16,28,10,12].map(w => ({wch:w}));
 
   // Estilo encabezado (color navy)
   const range = XLSX.utils.decode_range(ws['!ref']);
