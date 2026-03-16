@@ -342,6 +342,45 @@
 
   /* ANIMATIONS */
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .dir-constructor {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    padding: 8px 10px; border: 1.5px solid var(--gray2);
+    border-radius: var(--radius); background: var(--white);
+    transition: border-color .15s;
+  }
+  .dir-constructor:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(204,23,23,0.12);
+  }
+  .dir-constructor select {
+    padding: 4px 8px; border: 1px solid var(--gray2);
+    border-radius: 6px; font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray0); color: var(--text);
+    outline: none; min-width: 110px;
+  }
+  .dir-constructor select:focus { border-color: var(--accent); box-shadow: none; }
+  .dir-constructor input[type=text] {
+    padding: 4px 8px; border: 1px solid var(--gray2);
+    border-radius: 6px; font-size: 13px; font-family: 'DM Mono', monospace;
+    width: 70px; outline: none; background: var(--white);
+  }
+  .dir-constructor input[type=text]:focus { border-color: var(--accent); box-shadow: none; }
+  .dir-constructor input.dir-comp {
+    width: 200px; font-family: 'DM Sans', sans-serif; flex: 1; min-width: 150px;
+  }
+  .dir-sep {
+    font-size: 14px; font-weight: 600; color: var(--gray3);
+    user-select: none; padding: 0 2px;
+  }
+  .dir-preview {
+    margin-top: 6px; padding: 7px 12px;
+    background: var(--gray0); border: 1px dashed var(--gray2);
+    border-radius: 6px; font-size: 13px;
+    font-family: 'DM Mono', monospace; color: var(--navy);
+    font-weight: 500; letter-spacing: .3px;
+  }
+  .dir-preview.filled { border-color: var(--accent); background: #FFF5F5; color: var(--accent); }
   .section.active { animation: fadeIn .2s ease; }
 
   /* RESPONSIVE */
@@ -416,7 +455,33 @@
             </div>
             <div class="field full">
               <label>Dirección de entrega <span class="req">*</span></label>
-              <input type="text" id="f-direccion" placeholder="Calle / Carrera, número, piso / apto">
+              <div class="dir-constructor">
+                <select id="dir-tipo" onchange="buildDir()">
+                  <option value="">Tipo vía</option>
+                  <optgroup label="Principales">
+                    <option>Calle</option>
+                    <option>Carrera</option>
+                    <option>Avenida</option>
+                    <option>Diagonal</option>
+                    <option>Transversal</option>
+                  </optgroup>
+                  <optgroup label="Otras">
+                    <option>Circular</option>
+                    <option>Autopista</option>
+                    <option>Kilómetro</option>
+                    <option>Vía</option>
+                    <option>Variante</option>
+                  </optgroup>
+                </select>
+                <input type="text" id="dir-num1" placeholder="Ej: 45" oninput="soloAlfanum(this);buildDir()" maxlength="6">
+                <span class="dir-sep">#</span>
+                <input type="text" id="dir-num2" placeholder="Ej: 12" oninput="soloAlfanum(this);buildDir()" maxlength="6">
+                <span class="dir-sep">-</span>
+                <input type="text" id="dir-num3" placeholder="Ej: 08" oninput="soloAlfanum(this);buildDir()" maxlength="6">
+                <input type="text" id="dir-comp" placeholder="Complemento: Apto 301, Casa 5, Local 2..." oninput="buildDir()" class="dir-comp">
+              </div>
+              <div class="dir-preview" id="dir-preview">—</div>
+              <input type="hidden" id="f-direccion">
             </div>
             <div class="field">
               <label>Barrio <span class="req">*</span></label>
@@ -777,6 +842,38 @@ function togglePill(el) {
 function soloEnteros(el) {
   el.value = el.value.replace(/[^0-9]/g, '');
 }
+function soloAlfanum(el) {
+  el.value = el.value.replace(/[^0-9A-Za-z]/g, '');
+}
+
+// ---- CONSTRUCTOR DIRECCIÓN ----
+function buildDir() {
+  const tipo  = document.getElementById('dir-tipo').value;
+  const num1  = document.getElementById('dir-num1').value.trim();
+  const num2  = document.getElementById('dir-num2').value.trim();
+  const num3  = document.getElementById('dir-num3').value.trim();
+  const comp  = document.getElementById('dir-comp').value.trim();
+  let dir = '';
+  if(tipo)  dir += tipo;
+  if(num1)  dir += (dir?' ':'') + num1;
+  if(num2)  dir += ' # ' + num2;
+  if(num3)  dir += ' - ' + num3;
+  if(comp)  dir += ' ' + comp;
+  document.getElementById('f-direccion').value = dir;
+  const prev = document.getElementById('dir-preview');
+  if(dir) { prev.textContent = dir; prev.classList.add('filled'); }
+  else    { prev.textContent = '—'; prev.classList.remove('filled'); }
+}
+
+function resetDirConstructor() {
+  ['dir-tipo','dir-num1','dir-num2','dir-num3','dir-comp'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  document.getElementById('f-direccion').value = '';
+  const prev = document.getElementById('dir-preview');
+  if(prev) { prev.textContent = '—'; prev.classList.remove('filled'); }
+}
 
 // ---- POWER AUTOMATE ----
 const POWER_AUTOMATE_URL = 'https://default5a621dddd1d3448ea20b8503e8a56d.36.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a06abc78929d471b83ac6e45a076687c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=wZ9djbR2vQsG7BCJH6vRLr1wfueHoMqwPYWGQSV_Qwk';
@@ -913,6 +1010,7 @@ function actualizarBadge() {
 function limpiarForm() {
   ['f-cliente','f-direccion','f-barrio','f-telefono','f-pedido','f-factura','f-contacto','f-obs-entrega']
     .forEach(id => { document.getElementById(id).value = ''; document.getElementById(id).classList.remove('error'); });
+  resetDirConstructor();
   document.getElementById('f-ciudad').value = '';
   document.getElementById('f-localidad').value = '';
   document.getElementById('f-cantidad').value = '';
@@ -1025,7 +1123,18 @@ function editarPedido(id) {
   if(!p) return;
   editId = id;
   document.getElementById('f-cliente').value    = p.cliente || '';
-  document.getElementById('f-direccion').value  = p.direccion || '';
+  // Restaurar constructor de dirección
+  const dirParts = (p.direccion||'').match(/^(Calle|Carrera|Avenida|Diagonal|Transversal|Circular|Autopista|Kilómetro|Vía|Variante)\s+([^#]+?)(?:\s+#\s+([^-]+?)(?:\s+-\s+(\S+)(?:\s+(.+))?)?)?$/);
+  if(dirParts) {
+    document.getElementById('dir-tipo').value  = dirParts[1]||'';
+    document.getElementById('dir-num1').value  = (dirParts[2]||'').trim();
+    document.getElementById('dir-num2').value  = (dirParts[3]||'').trim();
+    document.getElementById('dir-num3').value  = (dirParts[4]||'').trim();
+    document.getElementById('dir-comp').value  = (dirParts[5]||'').trim();
+  } else {
+    document.getElementById('dir-comp').value = p.direccion||'';
+  }
+  buildDir();
   document.getElementById('f-barrio').value     = p.barrio || '';
   document.getElementById('f-ciudad').value     = p.ciudad || '';
   document.getElementById('f-localidad').value  = p.localidad || '';
