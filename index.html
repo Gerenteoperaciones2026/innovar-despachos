@@ -652,11 +652,11 @@
             </div>
             <div class="field">
               <label>Cantidad (unidades)</label>
-              <input type="number" id="f-cantidad" placeholder="0" min="0">
+              <input type="number" id="f-cantidad" placeholder="0" min="0" oninput="soloEnteros(this)">
             </div>
             <div class="field">
-              <label>Valor factura ($)</label>
-              <input type="number" id="f-valor" placeholder="0" min="0">
+              <label>Valor factura ($) <span style="background:#CC1717;color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;margin-left:4px">Sin IVA</span></label>
+              <input type="number" id="f-valor" placeholder="Ingrese valor sin IVA" min="0" oninput="soloEnteros(this)">
             </div>
             <div class="field">
               <label>Tipo de venta <span class="req">*</span></label>
@@ -678,7 +678,7 @@
             </div>
             <div class="field" id="campo-saldo" style="display:none">
               <label>Valor del saldo ($)</label>
-              <input type="number" id="f-saldo-valor" placeholder="0" min="0">
+              <input type="number" id="f-saldo-valor" placeholder="0" min="0" oninput="soloEnteros(this)">
             </div>
           </div>
         </div>
@@ -780,6 +780,11 @@ function togglePill(el) {
   const cb = el.querySelector('input[type=checkbox]');
   cb.checked = !cb.checked;
   el.classList.toggle('checked', cb.checked);
+}
+
+// ---- VALIDACIÓN NUMÉRICA ----
+function soloEnteros(el) {
+  el.value = el.value.replace(/[^0-9]/g, '');
 }
 
 // ---- POWER AUTOMATE ----
